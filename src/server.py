@@ -2,8 +2,9 @@
 import socket
 import select
 import sys
+import traceback
 
-HOST = 'localhost'
+HOST = '192.168.11.98'
 PORT = int(sys.argv[1])
 connectionList = []  # 紀錄連線後的client
 
@@ -16,7 +17,7 @@ except:
     print("bind port error")
 print("bind host and port")
 
-server.listen(100)
+server.listen(10000)
 print("socket listening")
 
 connectionList.append(server)
@@ -36,16 +37,15 @@ def broadcast(typeMsg: str, message: str):
     # 將訊息傳給所有人
     for socket in connectionList:
         if not socket is server:
-            # try:
-            msg = "[{typeMsg}]:{message}".format(
-                typeMsg=typeMsg, message=message)
+            try:
+                msg = "[{typeMsg}]:{message}".format(
+                    typeMsg=typeMsg, message=message)
 
-            socket.send(bytes(msg, 'utf-8'))
-            # except err:
-            #     print("A"+err)
-            # 關閉該連線 移除標記
-            # socket.close()
-            # connectionList.remove(socket)
+                socket.send(bytes(msg, 'utf-8'))
+            except:
+               # 關閉該連線 移除標記
+                socket.close()
+                connectionList.remove(socket)
 
 
 while True:
@@ -61,21 +61,32 @@ while True:
 
         else:
             # client send message to server Or client socket be trigger
-            # try:
-            data = sock.recv(1024).decode("utf-8")
-            if not data:
-                # disconnect
-                connectionList.remove(client)
-            else:
-                if(data == "#clientList"):
-                    print("client:{} use command \"#clientList\"".format(
-                        sock.getpeername()))
-                    sock.send(bytes(getAllConnect(), 'utf-8'))
+            try:
+                data = sock.recv(1024)
+                if not data:
+                    # disconnect
+                    connectionList.remove(client)
                 else:
-                    # client socket be trigger Or get client message
-                    clientAddr = client.getpeername()
-                    print("clientAddr:{clientAddr} send:{msg}".format(
-                        clientAddr=clientAddr, msg=data))
-                    broadcast("client {}".format(clientAddr), data)
-            # except:
-            #     print("error")
+                    data = data.decode("utf-8")
+                    if(data == "#clientList"):
+                        print("client:{} use command \"#clientList\"".format(
+                            sock.getpeername()))
+                        sock.send(bytes(getAllConnect(), 'utf-8'))
+                    else:
+                        # client socket be trigger Or get client message
+                        clientAddr = client.getpeername()
+                        print("clientAddr:{clientAddr} send:{msg}".format(
+                            clientAddr=clientAddr, msg=data))
+                        broadcast("client {}".format(clientAddr), data)
+            except Exception as e:
+                error_class = e.__class__.__name__  # 取得錯誤類型
+                detail = e.args[0]  # 取得詳細內容
+                cl, exc, tb = sys.exc_info()  # 取得Call Stack
+                lastCallStack = traceback.extract_tb(
+                    tb)[-1]  # 取得Call Stack的最後一筆資料
+                fileName = lastCallStack[0]  # 取得發生的檔案名稱
+                lineNum = lastCallStack[1]  # 取得發生的行號
+                funcName = lastCallStack[2]  # 取得發生的函數名稱
+                errMsg = "File \"{}\", line {}, in {}: [{}] {}".format(
+                    fileName, lineNum, funcName, error_class, detail)
+                print(errMsg)

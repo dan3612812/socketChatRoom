@@ -2,9 +2,10 @@
 import sys
 import socket
 import time
-from threading import Thread
+import threading
+import select
 
-HOST = 'localhost'
+HOST = '192.168.11.98'
 PORT = int(sys.argv[1])
 
 queue = []
@@ -13,23 +14,33 @@ s.connect((HOST, PORT))
 queue.append(s)
 print("add client to queue")
 
-
-def socketRecv():
-    data = s.recv(1024).decode("utf-8")
-    print(data)
-    time.sleep(0.1)
+sendMsgQueue = []
 
 
 def inputJob():
-    data = input()
-    s.send(bytes(data, "utf-8"))
-    time.sleep(0.1)
+    while True:
+        data = input()
+        sendMsgQueue.append(data)
 
 
-while True:
-    time.sleep(0.1)
-    Thread(target=socketRecv).start()
-    Thread(target=inputJob).start()
+inputThread = threading.Thread(target=inputJob)
+inputThread.start()
 
+try:
+    while True:
+        readable, writable, _ = select.select([s], [], [],0.00001)
+        for sock in readable:
+            data = sock.recv(1024)
+            if data:
+                data = data.decode("utf-8")
+                print(data)
 
-s.close()  # 關閉連線
+        for msg in sendMsgQueue:
+            s.send(bytes(msg, "utf-8"))
+            sendMsgQueue.remove(msg)
+
+except KeyboardInterrupt:
+    print('in except')
+    inputThread.join()
+    s.close()
+    print("close")
