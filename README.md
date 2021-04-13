@@ -9,3 +9,7 @@ python src/client.py {port}
 |   command   |         說明         |
 | :---------: | :------------------: |
 | #clientList | 查看現在的client清單 |
+
+
+## run benchmarkTest
+"python {port} {connectionCount} {messageCount}"
