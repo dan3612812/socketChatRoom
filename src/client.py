@@ -4,6 +4,7 @@ import socket
 import time
 import threading
 import select
+import os
 
 HOST = '192.168.11.98'
 PORT = int(sys.argv[1])
@@ -23,7 +24,7 @@ def inputJob():
             data = input()
             sendMsgQueue.append(data)
     except EOFError:
-        print("A")
+        print("")
 
 
 inputThread = threading.Thread(target=inputJob)
@@ -37,13 +38,19 @@ try:
             if data:
                 data = data.decode("utf-8")
                 print(data)
+            else:
+                # disconnect
+                raise ConnectionAbortedError("disconnect")
 
         for msg in sendMsgQueue:
             s.send(bytes(msg, "utf-8"))
             sendMsgQueue.remove(msg)
 
-except KeyboardInterrupt:
-    print('in except')
+except (KeyboardInterrupt):
+    print("keyboardInterrupt")
     s.close()
-    inputThread.join()
-    print("close")
+except ConnectionAbortedError:
+    print("disconnect")
+finally:
+    print("connect is close")
+    os._exit(0)
