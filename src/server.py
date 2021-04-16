@@ -3,6 +3,7 @@ import socket
 import select
 import sys
 import traceback
+import time
 
 HOST = '192.168.11.98'
 PORT = int(sys.argv[1])
@@ -46,17 +47,18 @@ def broadcast(typeMsg: str, message: str):
                # 關閉該連線 移除標記
                 socket.close()
                 connectionList.remove(socket)
+                broadcast("system", "client :{} disconnect".format(clientAddr))
 
 
 while True:
-    readable, _, _ = select.select(connectionList, [], [], 1)
+    readable, _, _ = select.select(connectionList, [], [], 0.001)
     for sock in readable:
         if sock is server:
             # 有client handshake
             client, addr = sock.accept()
             connectionList.append(client)
             print("client connection :{}".format(addr))
-            client.send(bytes("welcome to yuntech bagayaro", 'utf-8'))
+            client.send(bytes("welcome to Yuntech chat Room", 'utf-8'))
             broadcast("system", "client :{} connection.".format(addr))
 
         else:
@@ -65,7 +67,14 @@ while True:
                 data = sock.recv(1024)
                 if not data:
                     # disconnect
-                    connectionList.remove(client)
+                    clientAddr = sock.getpeername()
+                    sock.close()
+                    if(client in connectionList):
+                        connectionList.remove(client)
+                    # borcast all client
+                    msg = "client :{} disconnect".format(clientAddr)
+                    print(msg)
+                    broadcast("system", msg)
                 else:
                     data = data.decode("utf-8")
                     if(data == "#clientList"):

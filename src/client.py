@@ -18,9 +18,12 @@ sendMsgQueue = []
 
 
 def inputJob():
-    while True:
-        data = input()
-        sendMsgQueue.append(data)
+    try:
+        while True:
+            data = input()
+            sendMsgQueue.append(data)
+    except EOFError:
+        print("A")
 
 
 inputThread = threading.Thread(target=inputJob)
@@ -28,7 +31,7 @@ inputThread.start()
 
 try:
     while True:
-        readable, writable, _ = select.select([s], [], [],0.00001)
+        readable, writable, _ = select.select([s], [], [], 0.00001)
         for sock in readable:
             data = sock.recv(1024)
             if data:
@@ -41,6 +44,6 @@ try:
 
 except KeyboardInterrupt:
     print('in except')
-    inputThread.join()
     s.close()
+    inputThread.join()
     print("close")
