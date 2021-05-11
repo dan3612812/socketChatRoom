@@ -4,12 +4,13 @@ python src/server.py {port}
 # how to run client
 python src/client.py {port}
 
-## server command list
+# In chatRoom
+## client command list
 
-|   command   |         說明         |
+|   command   |  description         |
 | :---------: | :------------------: |
-| #clientList | 查看現在的client清單 |
+| #clientList | lookup online user |
 
-
+# TODO
 ## run benchmarkTest
 "python {port} {connectionCount} {messageCount}"
